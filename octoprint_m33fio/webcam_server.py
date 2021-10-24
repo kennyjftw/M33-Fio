@@ -7,15 +7,15 @@ import sys
 import time
 import platform
 import threading
-import BaseHTTPServer
-import SocketServer
+import http.server
+import socketserver
 import socket
 
 # Check if using Windows, Linux, or FreeBSD
 if platform.uname()[0].startswith("Windows") or platform.uname()[0].startswith("Linux") or platform.uname()[0].startswith("FreeBSD") :
 
 	# Import webcam libraries
-	import StringIO
+	import io
 	from PIL import Image
 	import pygame.camera
 
@@ -34,7 +34,7 @@ elif platform.uname()[0].startswith("Darwin") :
 if len(sys.argv) == 2 and (sys.argv[1] == "-h" or sys.argv[1] == "--help") :
 
 	# Display usage
-	print "Webcam Server: Hosts a webcam's stream and snapshot at /stream.mjpg and /snapshot.jpg\nUsage: python webcam_server.py camera httpPort framesPerSecond width height"
+	print("Webcam Server: Hosts a webcam's stream and snapshot at /stream.mjpg and /snapshot.jpg\nUsage: python webcam_server.py camera httpPort framesPerSecond width height")
 
 # Otherwise
 else :
@@ -49,7 +49,7 @@ else :
 		if not len(pygame.camera.list_cameras()) :
 		
 			# Display message
-			print "No cameras detected"
+			print("No cameras detected")
 	
 			# Exit
 			exit()
@@ -64,7 +64,7 @@ else :
 		if not len(QTKit.QTCaptureDevice.inputDevices()) :
 		
 			# Display message
-			print "No cameras detected"
+			print("No cameras detected")
 	
 			# Exit
 			exit()
@@ -104,7 +104,7 @@ else :
 		cameraHeight = 480
 
 	# Create request handler
-	class requestHandler(BaseHTTPServer.BaseHTTPRequestHandler) :
+	class requestHandler(http.server.BaseHTTPRequestHandler) :
 
 		# GET request
 		def do_GET(self) :
@@ -161,7 +161,7 @@ else :
 				self.wfile.write("\r\n\r\n")
 
 	# Create threaded HTTP server
-	class ThreadedHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer) :
+	class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer) :
 	
 		# On bind
 		def server_bind(self) :
@@ -175,7 +175,7 @@ else :
 				self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 			
 			# Bind
-			BaseHTTPServer.HTTPServer.server_bind(self)
+			http.server.HTTPServer.server_bind(self)
 
 	# Start server
 	try :
@@ -199,9 +199,9 @@ else :
 			ipAddress = socket.gethostbyname("localhost")
 	
 	# Display hosting information
-	print "Using webcam device " + str(cameraPort) + " with a resolution of " + str(cameraWidth) + "x" + str(cameraHeight) + " running at " + str(int(1.0 / cameraFrameDelay)) + " frames/second"
-	print "Hosting webcam still image at http://" + ipAddress + ":" + str(httpPort) + "/snapshot.jpg"
-	print "Hosting webcam video stream at http://" + ipAddress + ":" + str(httpPort) + "/stream.mjpg"
+	print("Using webcam device " + str(cameraPort) + " with a resolution of " + str(cameraWidth) + "x" + str(cameraHeight) + " running at " + str(int(1.0 / cameraFrameDelay)) + " frames/second")
+	print("Hosting webcam still image at http://" + ipAddress + ":" + str(httpPort) + "/snapshot.jpg")
+	print("Hosting webcam video stream at http://" + ipAddress + ":" + str(httpPort) + "/stream.mjpg")
 
 	# Check if pygame camera is usable
 	if "pygame.camera" in sys.modules :
@@ -212,7 +212,7 @@ else :
 		if cameraPort not in pygame.camera.list_cameras() :
 		
 			# Display message
-			print "Camera not detected"
+			print("Camera not detected")
 			
 			# Exit
 			exit()
@@ -225,7 +225,7 @@ else :
 		cameraImage = pygame.Surface((cameraWidth, cameraHeight))
 	
 		# Stabilize lighting
-		for i in xrange(30) :
+		for i in range(30) :
 			camera.get_image()
 
 		# Loop forever
@@ -238,7 +238,7 @@ else :
 	
 				# Convert image to a JPEG
 				rawImage = Image.frombytes("RGB", (cameraWidth, cameraHeight), pygame.image.tostring(cameraImage, "RGB", False))
-				buffer = StringIO.StringIO()
+				buffer = io.StringIO()
 				rawImage.save(buffer, "JPEG")
 	
 				# Update current frame
@@ -266,7 +266,7 @@ else :
 				if cameraPort not in cameras :
 				
 					# Display message
-					print "Camera not detected"
+					print("Camera not detected")
 				
 					# Exit
 					exit()
