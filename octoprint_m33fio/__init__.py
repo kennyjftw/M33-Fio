@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+
 
 
 # Plugin details
@@ -43,8 +43,7 @@ import threading
 import yaml
 import logging
 import logging.handlers
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
 import requests
 from .gcode import Gcode
 from .vector import Vector
@@ -54,7 +53,7 @@ if platform.uname()[0].startswith("Windows") or platform.uname()[0].startswith("
 
 	# Import webcam libraries
 	try :
-		import StringIO
+		import io
 		from PIL import Image
 		import pygame.camera
 	
@@ -602,19 +601,19 @@ class M33FioPlugin(
 			if currentPort == port[0] :
 			
 				# Check if port contains the correct VID and PID to be a Micro 3D printer
-				if re.match("^USB VID:PID=0?3EB:2404(?: |$)", port[2], re.IGNORECASE) is not None :
+				if re.match("^USB VID:PID=0?3EB:2404(?: |$)", port[2], re.IGNORECASE) != None :
 				
 					# Return printer type
 					return "Micro 3D"
 				
 				# Otherwise check if port contains the correct VID and PID to be an M3D Pro printer
-				elif re.match("^USB VID:PID=0?483:A21E(?: |$)", port[2], re.IGNORECASE) is not None :
+				elif re.match("^USB VID:PID=0?483:A21E(?: |$)", port[2], re.IGNORECASE) != None :
 				
 					# Return printer type
 					return "M3D Pro"
 				
 				# Otherwise check if port contains the correct VID and PID to be a Micro+ printer
-				elif re.match("^USB VID:PID=0?483:A21F(?: |$)", port[2], re.IGNORECASE) is not None :
+				elif re.match("^USB VID:PID=0?483:A21F(?: |$)", port[2], re.IGNORECASE) != None :
 				
 					# Return printer type
 					return "Micro+"
@@ -635,7 +634,7 @@ class M33FioPlugin(
 		for port in list(serial.tools.list_ports.comports()) :
 		
 			# Check if port contains the correct VID and PID to be a Micro 3D, M3D Pro, or Micro+ printer
-			if re.match("^USB VID:PID=0?3EB:2404(?: |$)", port[2], re.IGNORECASE) is not None or re.match("^USB VID:PID=0?483:A21E(?: |$)", port[2], re.IGNORECASE) is not None or re.match("^USB VID:PID=0?483:A21F(?: |$)", port[2], re.IGNORECASE) is not None :
+			if re.match("^USB VID:PID=0?3EB:2404(?: |$)", port[2], re.IGNORECASE) != None or re.match("^USB VID:PID=0?483:A21E(?: |$)", port[2], re.IGNORECASE) != None or re.match("^USB VID:PID=0?483:A21F(?: |$)", port[2], re.IGNORECASE) != None :
 			
 				# Save serial port
 				self.allSerialPorts += [port[0]]
@@ -662,7 +661,7 @@ class M33FioPlugin(
 				if (searchForCurrent and (self.currentSerialPort is None or port[0] == self.currentSerialPort)) or (not searchForCurrent and port[0] not in self.allSerialPorts) :
 		
 					# Check if port contains the correct VID and PID to be a Micro 3D, M3D Pro, or Micro+ printer
-					if re.match("^USB VID:PID=0?3EB:2404(?: |$)", port[2], re.IGNORECASE) is not None or re.match("^USB VID:PID=0?483:A21E(?: |$)", port[2], re.IGNORECASE) is not None or re.match("^USB VID:PID=0?483:A21F(?: |$)", port[2], re.IGNORECASE) is not None :
+					if re.match("^USB VID:PID=0?3EB:2404(?: |$)", port[2], re.IGNORECASE) != None or re.match("^USB VID:PID=0?483:A21E(?: |$)", port[2], re.IGNORECASE) != None or re.match("^USB VID:PID=0?483:A21F(?: |$)", port[2], re.IGNORECASE) != None :
 					
 						# Check if first time connecting
 						if searchForCurrent and self.currentSerialPort is None :
@@ -689,13 +688,13 @@ class M33FioPlugin(
 			if searchForCurrent :
 			
 				# Check if an uninitialized printer was found
-				if firstUninitializedPrinter is not None :
+				if firstUninitializedPrinter != None :
 				
 					# Return port
 					return firstUninitializedPrinter
 				
 				# Check if an initialized printer was found
-				if firstInitializedPrinter is not None :
+				if firstInitializedPrinter != None :
 				
 					# Return port
 					return firstInitializedPrinter
@@ -717,7 +716,8 @@ class M33FioPlugin(
 	
 		# Check if available serial ports have changed
 		newestSerialPortsList = list(serial.tools.list_ports.comports())
-		if cmp(self.serialPortsList, newestSerialPortsList) != 0 :
+		comparison_result = (self.serialPortsList > newestSerialPortsList) - (self.serialPortsList < newestSerialPortsList)
+		if comparison_result != 0 :
 	
 			# Update all serial ports
 			self.serialPortsList = newestSerialPortsList
@@ -735,7 +735,7 @@ class M33FioPlugin(
 			for port in newestSerialPortsList :
 		
 				# Check if port contains the correct VID and PID to be a Micro 3D heatbed
-				if re.match("^USB VID:PID=1A86:7523(?: |$)", port[2], re.IGNORECASE) is not None :
+				if re.match("^USB VID:PID=1A86:7523(?: |$)", port[2], re.IGNORECASE) != None :
 			
 					# Return serial port
 					return port[0]
@@ -793,7 +793,7 @@ class M33FioPlugin(
 				self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Create message", type = "notice", title = gettext("Heatbed removed"), text = gettext("Heatbed has been disconnected")))
 			
 			# Otherwise check if a heatbed has been connected
-			elif not self.heatbedConnected and heatbedPort is not None :
+			elif not self.heatbedConnected and heatbedPort != None :
 			
 				# Connect to heatbed
 				error = False
@@ -880,7 +880,7 @@ class M33FioPlugin(
 				if error :
 				
 					# Check if connection to heatbed was established
-					if self.heatbedConnection is not None :
+					if self.heatbedConnection != None :
 					
 						# Close connection
 						self.heatbedConnection.close()
@@ -961,7 +961,7 @@ class M33FioPlugin(
 	def addChannel(self) :
 	
 		# Check if M33 Fio channel doesn't exist
-		if octoprint.settings.settings().get(["server", "firstRun"]) is not None and not octoprint.settings.settings().get(["server", "firstRun"]) and octoprint.settings.settings().get(["plugins", "announcements", "channels", "_m33fio"]) is None :
+		if octoprint.settings.settings().get(["server", "firstRun"]) != None and not octoprint.settings.settings().get(["server", "firstRun"]) and octoprint.settings.settings().get(["plugins", "announcements", "channels", "_m33fio"]) is None :
 		
 			# Add M33 Fio channel to announcements
 			octoprint.settings.settings().set(["plugins", "announcements", "channels", "_m33fio"], dict(
@@ -990,12 +990,12 @@ class M33FioPlugin(
 	def connectedToInternet(self) :
 	
 		# Create request
-		request = urllib2.Request("http://exploitkings.com")
+		request = urllib.Request("http://exploitkings.com")
 		request.get_method = lambda : "HEAD"
 		
 		# Check if request went through
 		try :
-			urllib2.urlopen(request, timeout = 1)
+			urllib.request.urlopen(request, timeout = 1)
 			
 			# Return true
 			return True
@@ -1055,7 +1055,7 @@ class M33FioPlugin(
 	
 		# Set reminders on initial OctoPrint instance
 		currentPort = self.getListenPort(psutil.Process(os.getpid()))
-		if currentPort is not None and self.getListenPort(psutil.Process(os.getpid())) == 5000 :
+		if currentPort != None and self.getListenPort(psutil.Process(os.getpid())) == 5000 :
 			self.slicerReminder = True
 			self.sleepReminder = True
 		else :
@@ -1131,7 +1131,7 @@ class M33FioPlugin(
 		
 		# Get data from server
 		try :
-			self.serverData = json.load(urllib2.urlopen("https://exploitkings.com/scripts/M33 Fio.html?" + urllib.quote_plus("Plugin Version".encode("utf-8")) + "=" + urllib.quote_plus(self._plugin_version.encode("utf-8"))))
+			self.serverData = json.load(urllib.request.urlopen("https://exploitkings.com/scripts/M33 Fio.html?" + urllib.parse.quote_plus("Plugin Version".encode("utf-8")) + "=" + urllib.parse.quote_plus(self._plugin_version.encode("utf-8"))))
 		except :
 			self.serverData = None
 	
@@ -1143,7 +1143,7 @@ class M33FioPlugin(
 		
 			# Check if camera port is set
 			cameraPort = self._settings.get(["CameraPort"])
-			if cameraPort is not None :
+			if cameraPort != None :
 			
 				# Check if port is open
 				if self.isPortOpen(4999) :
@@ -1341,7 +1341,7 @@ class M33FioPlugin(
 		self.sharedLibrary.setCalibrateBeforePrint(ctypes.c_bool(self._settings.get_boolean(["CalibrateBeforePrint"])))
 		self.sharedLibrary.setRemoveFanCommands(ctypes.c_bool(self._settings.get_boolean(["RemoveFanCommands"])))
 		self.sharedLibrary.setRemoveTemperatureCommands(ctypes.c_bool(self._settings.get_boolean(["RemoveTemperatureCommands"])))
-		if self._settings.get_int(["GpioLayer"]) is not None :
+		if self._settings.get_int(["GpioLayer"]) != None :
 			self.sharedLibrary.setUseGpio(ctypes.c_bool(self._settings.get_boolean(["UseGpio"])))
 			self.sharedLibrary.setGpioLayer(ctypes.c_ushort(self._settings.get_int(["GpioLayer"])))
 		else :
@@ -1384,7 +1384,7 @@ class M33FioPlugin(
 	def getFirmwareDetails(self) :
 	
 		# Check if EEPROM was read
-		if self.eeprom is not None :
+		if self.eeprom != None :
 		
 			# Get firmware version from EEPROM
 			firmwareVersion = self.eepromGetInt("firmwareVersion")
@@ -1571,7 +1571,7 @@ class M33FioPlugin(
 		
 		# Go through all profile values
 		values = profile.profile()
-		for key in values.keys() :
+		for key in list(values.keys()) :
 		
 			# Get current value
 			currentValue = str(key)
@@ -1623,7 +1623,7 @@ class M33FioPlugin(
 		output.write("[machine]\n")
 		
 		# Go through all machine values
-		for key in machine.keys() :
+		for key in list(machine.keys()) :
 		
 			# Write setting to output
 			output.write(str(key) + " = " + str(machine[key]) + "\n")
@@ -1632,7 +1632,7 @@ class M33FioPlugin(
 		output.write("\n[profile]\n")
 		
 		# Go through all settings
-		for key in settings.keys() :
+		for key in list(settings.keys()) :
 		
 			# Check if settings is a list
 			if isinstance(settings[key], list) :
@@ -1666,7 +1666,7 @@ class M33FioPlugin(
 		output.write("\n[alterations]\n")
 		
 		# Go through all alterations
-		for key in alterations.keys() :
+		for key in list(alterations.keys()) :
 			
 			# Go through all alteration's parts
 			index = 0
@@ -1730,7 +1730,7 @@ class M33FioPlugin(
 		self.unloadSharedLibrary()
 		
 		# Stop webcam process
-		if self.webcamProcess is not None :
+		if self.webcamProcess != None :
 			self.webcamProcess.kill()
 			self.webcamProcess = None
 		
@@ -1841,7 +1841,7 @@ class M33FioPlugin(
 		
 		# Make sure filament type is valid
 		value = self._settings.get(["FilamentType"])
-		if not isinstance(value, (str, unicode)) or (value != "ABS" and value != "PLA" and value != "HIPS" and value != "FLX" and value != "TGH" and value != "CAM" and value != "ABS-R" and value != "OTHER") :
+		if not isinstance(value, str) or (value != "ABS" and value != "PLA" and value != "HIPS" and value != "FLX" and value != "TGH" and value != "CAM" and value != "ABS-R" and value != "OTHER") :
 			self._settings.set(["FilamentType"], self.get_settings_defaults()["FilamentType"])
 		
 		# Make sure use validation preprocessor is valid
@@ -2015,12 +2015,12 @@ class M33FioPlugin(
 
 		# Make sure use GPIO pin is valid
 		value = self._settings.get_int(["GpioPin"])
-		if value is not None and not isinstance(value, int) :
+		if value != None and not isinstance(value, int) :
 			self._settings.set(["GpioPin"], self.get_settings_defaults()["GpioPin"])
 		
 		# Make sure use GPIO layer is valid
 		value = self._settings.get_int(["GpioLayer"])
-		if value is not None and not isinstance(value, int) :
+		if value != None and not isinstance(value, int) :
 			self._settings.set(["GpioLayer"], self.get_settings_defaults()["GpioLayer"])
 		
 		# Make sure heatbed temperature is valid
@@ -2049,7 +2049,7 @@ class M33FioPlugin(
 		
 		# Make sure use camera port is valid
 		value = self._settings.get(["CameraPort"])
-		if value is not None and not isinstance(value, (str, unicode)) :
+		if value != None and not isinstance(value, str) :
 			self._settings.set(["CameraPort"], self.get_settings_defaults()["CameraPort"])
 		
 		# Make sure camera width is valid
@@ -2075,7 +2075,7 @@ class M33FioPlugin(
 		
 		# Make sure mid print filament change layers is valid
 		value = self._settings.get(["MidPrintFilamentChangeLayers"])
-		if not isinstance(value, (str, unicode)) :
+		if not isinstance(value, str) :
 			self._settings.set(["MidPrintFilamentChangeLayers"], self.get_settings_defaults()["MidPrintFilamentChangeLayers"])
 		
 		# Make sure change led brightness is valid
@@ -2100,7 +2100,7 @@ class M33FioPlugin(
 		
 		# Make sure Micro 3D bootloader versions uploaded is valid
 		value = self._settings.get(["Micro3DBootloaderVersionsUploaded"])
-		if not isinstance(value, (str, unicode)) :
+		if not isinstance(value, str) :
 			self._settings.set(["Micro3DBootloaderVersionsUploaded"], self.get_settings_defaults()["Micro3DBootloaderVersionsUploaded"])
 		
 		# Make sure skew X is valid
@@ -2289,7 +2289,7 @@ class M33FioPlugin(
 		self.guaranteeSettingsAreValid()
 		
 		# Send message for enabling/disabling GPIO buttons
-		if self._settings.get_boolean(["UseGpio"]) and self._settings.get_int(["GpioPin"]) is not None and self._settings.get_int(["GpioLayer"]) is not None :
+		if self._settings.get_boolean(["UseGpio"]) and self._settings.get_int(["GpioPin"]) != None and self._settings.get_int(["GpioLayer"]) != None :
 			self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Enable GPIO Buttons"))
 		else :
 			self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Disable GPIO Buttons"))
@@ -2363,7 +2363,7 @@ class M33FioPlugin(
 			if self.webcamProcess is None or (oldCameraPort != self._settings.get(["CameraPort"]) or oldCameraWidth != self._settings.get_int(["CameraWidth"]) or oldCameraHeight != self._settings.get_int(["CameraHeight"]) or oldCameraFramesPerSecond != self._settings.get_int(["CameraFramesPerSecond"])) :
 		
 				# Stop webcam process
-				if self.webcamProcess is not None :
+				if self.webcamProcess != None :
 					self.webcamProcess.kill()
 					self.webcamProcess = None
 			
@@ -2374,7 +2374,7 @@ class M33FioPlugin(
 		else :
 		
 			# Stop webcam process
-			if self.webcamProcess is not None :
+			if self.webcamProcess != None :
 				self.webcamProcess.kill()
 				self.webcamProcess = None
 		
@@ -2411,7 +2411,7 @@ class M33FioPlugin(
 			if not self._printer.is_printing() and not self._printer.is_paused() :
 			
 				# Close connection
-				if self._printer._comm is not None :
+				if self._printer._comm != None :
 	
 					try :
 						self._printer._comm.close(False, False)
@@ -2559,10 +2559,10 @@ class M33FioPlugin(
 				currentPort = self.getPort()
 				
 				# Check if printer was found
-				if currentPort is not None :
+				if currentPort != None :
 				
 					# Re-connect; wait for the device to be available
-					for i in xrange(5) :
+					for i in range(5) :
 						try :
 							connection = serial.Serial(currentPort, currentBaudrate)
 							break
@@ -2668,10 +2668,10 @@ class M33FioPlugin(
 				currentPort = self.getPort()
 				
 				# Check if printer was found
-				if currentPort is not None :
+				if currentPort != None :
 				
 					# Re-connect; wait for the device to be available
-					for i in xrange(5) :
+					for i in range(5) :
 						try :
 							connection = serial.Serial(currentPort, currentBaudrate)
 							break
@@ -2781,10 +2781,10 @@ class M33FioPlugin(
 				currentPort = self.getPort()
 				
 				# Check if printer was found
-				if currentPort is not None :
+				if currentPort != None :
 				
 					# Re-connect; wait for the device to be available
-					for i in xrange(5) :
+					for i in range(5) :
 						try :
 							connection = serial.Serial(currentPort, currentBaudrate)
 							break
@@ -2960,7 +2960,7 @@ class M33FioPlugin(
 				self.emptyCommandQueue()
 				
 				# Set first line number to zero and clear history
-				if self._printer._comm is not None :
+				if self._printer._comm != None :
 					self._printer._comm._gcode_M110_sending("N0")
 					self._printer._comm._long_running_command = True
 				
@@ -3000,10 +3000,10 @@ class M33FioPlugin(
 				currentPort = self.getPort()
 				
 				# Check if printer was found
-				if currentPort is not None :
+				if currentPort != None :
 				
 					# Re-connect; wait for the device to be available
-					for i in xrange(5) :
+					for i in range(5) :
 						try :
 							connection = serial.Serial(currentPort, currentBaudrate)
 							break
@@ -3103,10 +3103,10 @@ class M33FioPlugin(
 					currentPort = self.getPort()
 					
 					# Check if printer was found
-					if currentPort is not None :
+					if currentPort != None :
 				
 						# Re-connect; wait for the device to be available
-						for i in xrange(5) :
+						for i in range(5) :
 							try :
 								connection = serial.Serial(currentPort, currentBaudrate)
 								break
@@ -3298,7 +3298,7 @@ class M33FioPlugin(
 					shutil.copyfile(fileLocation, fileDestination)
 				
 				# Return location
-				return flask.jsonify(dict(value = "OK", path = "m33fio/download/" + urllib.quote(destinationName.encode("utf-8"))))
+				return flask.jsonify(dict(value = "OK", path = "m33fio/download/" + urllib.parse.quote(destinationName.encode("utf-8"))))
 			
 			# Otherwise check if parameter is to view a default profile
 			elif data["value"].startswith("View Default Profile:") :
@@ -3341,7 +3341,7 @@ class M33FioPlugin(
 				os.remove(fileLocation)
 		
 				# Return location
-				return flask.jsonify(dict(value = "OK", path = "m33fio/download/" + urllib.quote(destinationName.encode("utf-8"))))
+				return flask.jsonify(dict(value = "OK", path = "m33fio/download/" + urllib.parse.quote(destinationName.encode("utf-8"))))
 			
 			# Otherwise check if parameter is to get printer settings
 			elif data["value"] == "Get Printer Settings" :
@@ -3395,7 +3395,7 @@ class M33FioPlugin(
 				output.close()
 				
 				# Return location
-				return flask.jsonify(dict(value = "OK", path = "m33fio/download/" + urllib.quote(destinationName.encode("utf-8"))))
+				return flask.jsonify(dict(value = "OK", path = "m33fio/download/" + urllib.parse.quote(destinationName.encode("utf-8"))))
 			
 			# Otherwise check if parameter is to set printer settings
 			elif data["value"].startswith("Set Printer Settings:") :
@@ -3598,10 +3598,10 @@ class M33FioPlugin(
 				currentPort = self.getPort()
 				
 				# Check if printer was found
-				if currentPort is not None :
+				if currentPort != None :
 		
 					# Re-connect; wait for the device to be available
-					for i in xrange(5) :
+					for i in range(5) :
 						try :
 							connection = serial.Serial(currentPort, currentBaudrate)
 							break
@@ -3695,7 +3695,7 @@ class M33FioPlugin(
 							# Check if process has the specified port
 							processDetails = psutil.Process(process.pid)
 							processPort = self.getListenPort(processDetails)
-							if processPort is not None and port == processPort :
+							if processPort != None and port == processPort :
 						
 								# Terminate process
 								processDetails.terminate()
@@ -3830,7 +3830,7 @@ class M33FioPlugin(
 					time.sleep(0.5)
 					
 					# Check if creating instance failed
-					if octoprintProcess.poll() is not None :
+					if octoprintProcess.poll() != None :
 					
 						# Remove config file
 						if os.path.isfile(configFile) :
@@ -3875,7 +3875,7 @@ class M33FioPlugin(
 				shutil.copyfile(configFile, fileDestination)
 				
 				# Return location
-				return flask.jsonify(dict(value = "OK", path = "m33fio/download/" + urllib.quote(destinationName.encode("utf-8"))))
+				return flask.jsonify(dict(value = "OK", path = "m33fio/download/" + urllib.parse.quote(destinationName.encode("utf-8"))))
 			
 			# Otherwise check if parameter is print settings
 			elif data["value"].startswith("Print Settings:") :
@@ -3925,7 +3925,7 @@ class M33FioPlugin(
 			elif data["value"] == "Reconnect To Printer" :
 			
 				# Check if connection was saved
-				if hasattr(self, "savedCurrentPort") and self.savedCurrentPort is not None and hasattr(self, "savedCurrentBaudrate") and self.savedCurrentBaudrate is not None and hasattr(self, "savedCurrentProfile") and self.savedCurrentProfile is not None :
+				if hasattr(self, "savedCurrentPort") and self.savedCurrentPort != None and hasattr(self, "savedCurrentBaudrate") and self.savedCurrentBaudrate != None and hasattr(self, "savedCurrentProfile") and self.savedCurrentProfile != None :
 				
 					# Display message
 					self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Show Message", message = gettext("Reconnecting…"), header = gettext("Connection Status")))
@@ -3954,7 +3954,7 @@ class M33FioPlugin(
 				self._printer.commands("M24")
 			
 			# Otherwise check if parameter is to resume after mid-print filament change
-			elif data["value"] == "Resume After Mid-Print Filament Change" and hasattr(self, "savedX") and self.savedX is not None and hasattr(self, "savedY") and self.savedY is not None and hasattr(self, "savedZ") and self.savedZ is not None and hasattr(self, "savedE") and self.savedE is not None :
+			elif data["value"] == "Resume After Mid-Print Filament Change" and hasattr(self, "savedX") and self.savedX != None and hasattr(self, "savedY") and self.savedY != None and hasattr(self, "savedZ") and self.savedZ != None and hasattr(self, "savedE") and self.savedE != None :
 			
 				# Set commands
 				commands = [
@@ -3990,7 +3990,7 @@ class M33FioPlugin(
 				self.emptyCommandQueue()
 				
 				# Set first line number to zero and clear history
-				if self._printer._comm is not None :
+				if self._printer._comm != None :
 					self._printer._comm._gcode_M110_sending("N0")
 					self._printer._comm._long_running_command = True
 				
@@ -4015,7 +4015,7 @@ class M33FioPlugin(
 				self.emptyCommandQueue()
 				
 				# Set first line number to zero and clear history
-				if self._printer._comm is not None :
+				if self._printer._comm != None :
 					self._printer._comm._gcode_M110_sending("N0")
 					self._printer._comm._long_running_command = True
 				
@@ -4054,7 +4054,7 @@ class M33FioPlugin(
 			
 			# Check if firmware version is valid
 			firmwareVersion = re.search("(^| )\\d{10}(?=\\.|$)", data["name"])
-			if firmwareVersion is not None :
+			if firmwareVersion != None :
 			
 				# Disable printer callbacks
 				while self in self._printer._callbacks :
@@ -4081,10 +4081,10 @@ class M33FioPlugin(
 				currentPort = self.getPort()
 				
 				# Check if printer was found
-				if currentPort is not None :
+				if currentPort != None :
 			
 					# Re-connect; wait for the device to be available
-					for i in xrange(5) :
+					for i in range(5) :
 						try :
 							connection = serial.Serial(currentPort, currentBaudrate)
 							break
@@ -4255,10 +4255,10 @@ class M33FioPlugin(
 		currentPort = self.getPort()
 		
 		# Check if printer was found
-		if currentPort is not None :
+		if currentPort != None :
 		
 			# Re-connect; wait for the device to be available
-			for i in xrange(5) :
+			for i in range(5) :
 				try :
 					connection = serial.Serial(currentPort, currentBaudrate)
 					break
@@ -4801,7 +4801,7 @@ class M33FioPlugin(
 																				else :
 
 																					# Re-connect; wait for the device to be available
-																					for i in xrange(5) :
+																					for i in range(5) :
 																						try :
 																							connection = serial.Serial(currentPort, currentBaudrate)
 																							break
@@ -5315,7 +5315,7 @@ class M33FioPlugin(
 	def sendCommands(self, commands) :
 		
 		# Check if printing and communication layer is established
-		if self._printer.is_printing() and self._printer._comm is not None :
+		if self._printer.is_printing() and self._printer._comm != None :
 		
 			# Make sure commands is a list
 			if not isinstance(commands, list) :
@@ -5414,7 +5414,7 @@ class M33FioPlugin(
 	def emptyCommandQueue(self) :
 	
 		# Check if communication layer has been established
-		if self._printer._comm is not None :
+		if self._printer._comm != None :
 		
 			# Empty command queues
 			while not self._printer._comm._send_queue.empty() :
@@ -5468,7 +5468,7 @@ class M33FioPlugin(
 			while not self.readyToPrint and self._printer.is_printing() :
 			
 				# Update communication timeout to prevent other commands from being sent
-				if self._printer._comm is not None :
+				if self._printer._comm != None :
 					self._printer._comm._gcode_G4_sent("G4 P10")
 				
 				time.sleep(0.01)
@@ -5483,7 +5483,7 @@ class M33FioPlugin(
 				self.emptyCommandQueue()
 
 				# Set first line number to zero and clear history
-				if self._printer._comm is not None :
+				if self._printer._comm != None :
 					self._printer._comm._gcode_M110_sending("N0")
 					self._printer._comm._long_running_command = True
 
@@ -5521,7 +5521,7 @@ class M33FioPlugin(
 					self.emptyCommandQueue()
 
 					# Set first line number to zero and clear history
-					if self._printer._comm is not None :
+					if self._printer._comm != None :
 						self._printer._comm._gcode_M110_sending("N0")
 						self._printer._comm._long_running_command = True
 
@@ -5572,7 +5572,7 @@ class M33FioPlugin(
 					while len(self.sentCommands) :
 				
 						# Update communication timeout to prevent other commands from being sent
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm._long_running_command = True
 							self._printer._comm._gcode_G4_sent("G4 P10")
 		
@@ -5589,7 +5589,7 @@ class M33FioPlugin(
 					self.emptyCommandQueue()
 	
 					# Set first line number to zero and clear history
-					if self._printer._comm is not None :
+					if self._printer._comm != None :
 						self._printer._comm._gcode_M110_sending("N0")
 						self._printer._comm._long_running_command = True
 	
@@ -5611,7 +5611,7 @@ class M33FioPlugin(
 					]
 					
 					# Set long running command
-					if self._printer._comm is not None :
+					if self._printer._comm != None :
 						self._printer._comm._long_running_command = True
 		
 					# Send commands with line numbers
@@ -5626,7 +5626,7 @@ class M33FioPlugin(
 			showMidPrintFilamentChangeAfterSend = False
 			sendCommandMultipleTimes = False
 		
-			# Check if pre-processing on the fly and command is not a starting line number and wasn't added on the fly
+			# Check if pre-processing on the fly and command != a starting line number and wasn't added on the fly
 			if self._printer.is_printing() and self._settings.get_boolean(["PreprocessOnTheFly"]) and not data.startswith("N0 M110") and "**" not in data :
 			
 				# Check if command contains a line number
@@ -5709,7 +5709,7 @@ class M33FioPlugin(
 							error = True
 						
 						# Check if no errors occured and communication layer has been established
-						if not error and self._printer._comm is not None :
+						if not error and self._printer._comm != None :
 						
 							# Set setting heatbed temperature
 							self.settingHeatbedTemperature = True
@@ -5720,7 +5720,7 @@ class M33FioPlugin(
 							
 							# Loop forever
 							readingTemperature = True
-							while readingTemperature and self._printer._comm is not None :
+							while readingTemperature and self._printer._comm != None :
 							
 								# Read heatbed temperature
 								heatbedTemperature = ""
@@ -5740,7 +5740,7 @@ class M33FioPlugin(
 								if readingTemperature :
 								
 									# Display heatbed temperature
-									if len(self._printer._comm.getTemp()) and self._printer._comm.getTemp()[0][0] is not None :
+									if len(self._printer._comm.getTemp()) and self._printer._comm.getTemp()[0][0] != None :
 										command = "T:%.4f B:%s" % (self._printer._comm.getTemp()[0][0], heatbedTemperature)
 									else :
 										command = "T:0.0 B:" + heatbedTemperature
@@ -5750,7 +5750,7 @@ class M33FioPlugin(
 									self._printer._addLog("Recv: " + command)
 								
 									# Update communication timeout to prevent other commands from being sent
-									if self._printer._comm is not None :
+									if self._printer._comm != None :
 										self._printer._comm._gcode_G4_sent("G4 S1")
 								
 									# Delay
@@ -5799,14 +5799,14 @@ class M33FioPlugin(
 						while len(self.sentCommands) :
 						
 							# Update communication timeout to prevent other commands from being sent
-							if self._printer._comm is not None :
+							if self._printer._comm != None :
 								self._printer._comm._long_running_command = True
 								self._printer._comm._gcode_G4_sent("G4 P10")
 				
 							time.sleep(0.01)
 						
 						# Pause print
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm.setPause(True)
 							
 							# Wait until printer is done printing
@@ -5817,7 +5817,7 @@ class M33FioPlugin(
 						self.emptyCommandQueue()
 			
 						# Set first line number to zero and clear history
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm._gcode_M110_sending("N0")
 							self._printer._comm._long_running_command = True
 			
@@ -5840,7 +5840,7 @@ class M33FioPlugin(
 						self.emptyCommandQueue()
 				
 						# Set first line number to zero and clear history
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm._gcode_M110_sending("N0")
 							self._printer._comm._long_running_command = True
 				
@@ -5850,12 +5850,12 @@ class M33FioPlugin(
 						self.numberWrapCounter = 0
 					
 						# Resume print
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm.setPause(False)
 						
 						# Restart line numbers
 						self.sendCommands(["N0 M110", "G90"])
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm._gcode_M110_sending("N1")
 							self._printer._comm._long_running_command = True
 					
@@ -5876,14 +5876,14 @@ class M33FioPlugin(
 						while len(self.sentCommands) :
 						
 							# Update communication timeout to prevent other commands from being sent
-							if self._printer._comm is not None :
+							if self._printer._comm != None :
 								self._printer._comm._long_running_command = True
 								self._printer._comm._gcode_G4_sent("G4 P10")
 				
 							time.sleep(0.01)
 						
 						# Pause print
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm.setPause(True)
 							
 							# Wait until printer is done printing
@@ -5894,7 +5894,7 @@ class M33FioPlugin(
 						self.emptyCommandQueue()
 			
 						# Set first line number to zero and clear history
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm._gcode_M110_sending("N0")
 							self._printer._comm._long_running_command = True
 			
@@ -5913,7 +5913,7 @@ class M33FioPlugin(
 						]
 						
 						# Set long running command
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm._long_running_command = True
 			
 						# Send commands with line numbers
@@ -5966,7 +5966,7 @@ class M33FioPlugin(
 					while len(self.sentCommands) :
 					
 						# Update communication timeout to prevent other commands from being sent
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm._long_running_command = True
 							self._printer._comm._gcode_G4_sent("G4 P10")
 			
@@ -5976,7 +5976,7 @@ class M33FioPlugin(
 					self.emptyCommandQueue()
 		
 					# Set first line number to zero and clear history
-					if self._printer._comm is not None :
+					if self._printer._comm != None :
 						self._printer._comm._gcode_M110_sending("N0")
 						self._printer._comm._long_running_command = True
 		
@@ -6020,7 +6020,7 @@ class M33FioPlugin(
 					while len(self.sentCommands) :
 				
 						# Update communication timeout to prevent other commands from being sent
-						if self._printer._comm is not None :
+						if self._printer._comm != None :
 							self._printer._comm._gcode_G4_sent("G4 P10")
 					
 						time.sleep(0.01)
@@ -6054,7 +6054,7 @@ class M33FioPlugin(
 			
 			# Send command multiple times if set
 			if sendCommandMultipleTimes :
-				for i in xrange(4) :
+				for i in range(4) :
 					self.originalWrite(data)
 			
 			# Check if end waiting after send
@@ -6088,7 +6088,7 @@ class M33FioPlugin(
 		response = self.originalRead()
 		
 		# Reset consecutive timeouts
-		if self._printer._comm is not None and hasattr(self._printer._comm, "_consecutive_timeouts") and response is not None and response.strip() is not "" :
+		if self._printer._comm != None and hasattr(self._printer._comm, "_consecutive_timeouts") and response != None and response.strip() != "" :
 			self._printer._comm._consecutive_timeouts = 0
 		
 		# Log received data
@@ -6128,7 +6128,7 @@ class M33FioPlugin(
 				self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Duplicate Wait"))
 			
 			# Check if waiting for a command to be processed
-			if self.lastLineNumberSent is not None and self.lastLineNumberSent % 0x10000 in self.sentCommands :
+			if self.lastLineNumberSent != None and self.lastLineNumberSent % 0x10000 in self.sentCommands :
 			
 				# Set response to resending command
 				response = "rs " + str(self.lastLineNumberSent) + "\n"
@@ -6327,7 +6327,7 @@ class M33FioPlugin(
 				response = "ok " + gettext(response) + "\n"
 			
 			# Check if waiting for a command to be processed
-			if self.lastLineNumberSent is not None and self.lastLineNumberSent % 0x10000 in self.sentCommands :
+			if self.lastLineNumberSent != None and self.lastLineNumberSent % 0x10000 in self.sentCommands :
 			
 				# Remove stored command
 				self.sentCommands.pop(self.lastLineNumberSent)
@@ -6345,7 +6345,7 @@ class M33FioPlugin(
 	def restoreFiles(self) :
 	
 		# Check if slicer was changed
-		if self.slicerChanges is not None :
+		if self.slicerChanges != None :
 		
 			# Move original files back
 			os.remove(self.slicerChanges["Slicer Profile Location"])
@@ -6417,7 +6417,7 @@ class M33FioPlugin(
 							break
 			
 			# Check if pip is set
-			if (octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._pip_caller is not None and octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._pip_caller.available) or (octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._settings.get(["pip"]) is not None and len(octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._settings.get(["pip"]))) :
+			if (octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._pip_caller != None and octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._pip_caller.available) or (octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._settings.get(["pip"]) != None and len(octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._settings.get(["pip"]))) :
 			
 				# Set Pip parameter
 				octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._settings.set(["pip_args"], "--user", True)
@@ -6474,7 +6474,7 @@ class M33FioPlugin(
 			# Check if Cura is a registered slicer
 			if "cura" in self._slicing_manager.registered_slicers :
 	
-				# Check if Cura is not configured
+				# Check if Cura != configured
 				if "cura" not in self._slicing_manager.configured_slicers :
 			
 					# Set Cura Engine locations
@@ -6531,7 +6531,7 @@ class M33FioPlugin(
 			# Check if Slic3r is a registered slicer
 			if "slic3r" in self._slicing_manager.registered_slicers :
 	
-				# Check if Slic3r is not configured
+				# Check if Slic3r != configured
 				if "slic3r" not in self._slicing_manager.configured_slicers :
 			
 					# Set Slic3r locations
@@ -6675,7 +6675,7 @@ class M33FioPlugin(
 			if self._printer_profile_manager.exists("micro_3d") :
 			
 				# Deselect the Micro 3D printer profile if it's selected
-				if self._printer_profile_manager.get_current() is not None and self._printer_profile_manager.get_current()["id"] == "micro_3d" :
+				if self._printer_profile_manager.get_current() != None and self._printer_profile_manager.get_current()["id"] == "micro_3d" :
 					self._printer_profile_manager.deselect()
 				
 				# Remove Micro 3D printer profile
@@ -6696,7 +6696,7 @@ class M33FioPlugin(
 		if event == octoprint.events.Events.ERROR :
 			
 			# Close connection
-			if self._printer._comm is not None :
+			if self._printer._comm != None :
 			
 				try :
 					self._printer._comm.close(False, False)
@@ -6740,7 +6740,7 @@ class M33FioPlugin(
 				self.emptyCommandQueue()
 			
 				# Set first line number to zero and clear history
-				if self._printer._comm is not None :
+				if self._printer._comm != None :
 					self._printer._comm._gcode_M110_sending("N0")
 					self._printer._comm._long_running_command = True
 			
@@ -6777,7 +6777,7 @@ class M33FioPlugin(
 				self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Not Using Shared Library"))
 			
 			# Check if EEPROM was read and connection to the printer has been established
-			if self.eeprom is not None and isinstance(self._printer.get_transport(), serial.Serial) :
+			if self.eeprom != None and isinstance(self._printer.get_transport(), serial.Serial) :
 			
 				# Send eeprom
 				self._plugin_manager.send_plugin_message(self._identifier, dict(value = "EEPROM", eeprom = self.eeprom.encode("hex").upper()))
@@ -6827,7 +6827,7 @@ class M33FioPlugin(
 				self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Disable GPIO Settings"))
 			
 			# Send message for enabling/disabling GPIO buttons
-			if self._settings.get_boolean(["UseGpio"]) and self._settings.get_int(["GpioPin"]) is not None and self._settings.get_int(["GpioLayer"]) is not None :
+			if self._settings.get_boolean(["UseGpio"]) and self._settings.get_int(["GpioPin"]) != None and self._settings.get_int(["GpioLayer"]) != None :
 				self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Enable GPIO Buttons"))
 			else :
 				self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Disable GPIO Buttons"))
@@ -6861,7 +6861,7 @@ class M33FioPlugin(
 			
 			# Get data from server
 			try :
-				self.serverData = json.load(urllib2.urlopen("https://exploitkings.com/scripts/M33 Fio.html?" + urllib.quote_plus("Plugin Version".encode("utf-8")) + "=" + urllib.quote_plus(self._plugin_version.encode("utf-8"))))
+				self.serverData = json.load(urllib.request.urlopen("https://exploitkings.com/scripts/M33 Fio.html?" + urllib.parse.quote_plus("Plugin Version".encode("utf-8")) + "=" + urllib.parse.quote_plus(self._plugin_version.encode("utf-8"))))
 			except :
 				self.serverData = None
 		
@@ -7002,7 +7002,7 @@ class M33FioPlugin(
 				while len(self.sentCommands) :
 			
 					# Update communication timeout to prevent other commands from being sent
-					if self._printer._comm is not None :
+					if self._printer._comm != None :
 						self._printer._comm._long_running_command = True
 						self._printer._comm._gcode_G4_sent("G4 P10")
 	
@@ -7016,7 +7016,7 @@ class M33FioPlugin(
 				self.emptyCommandQueue()
 
 				# Set first line number to zero and clear history
-				if self._printer._comm is not None :
+				if self._printer._comm != None :
 					self._printer._comm._gcode_M110_sending("N0")
 					self._printer._comm._long_running_command = True
 
@@ -7035,7 +7035,7 @@ class M33FioPlugin(
 				]
 				
 				# Set long running command
-				if self._printer._comm is not None :
+				if self._printer._comm != None :
 					self._printer._comm._long_running_command = True
 	
 				# Send commands with line numbers
@@ -7111,7 +7111,7 @@ class M33FioPlugin(
 			
 				# Check if process is listening on a port
 				processPort = self.getListenPort(psutil.Process(process.pid))
-				if processPort is not None :
+				if processPort != None :
 			
 					# Append process to list
 					processes += [[processPort, os.getpid() == process.pid]]
@@ -7278,7 +7278,7 @@ class M33FioPlugin(
 				currentBaudrate = 115200
 			
 			# Close connection
-			if self._printer._comm is not None :
+			if self._printer._comm != None :
 			
 				try :
 					self._printer._comm.close(False, False)
@@ -7301,7 +7301,7 @@ class M33FioPlugin(
 			else :
 			
 				# Display printer type
-				if self.getPrinterType(currentPort) is not None :
+				if self.getPrinterType(currentPort) != None :
 					self._logger.info("Connecting to a " + self.getPrinterType(currentPort) + " printer")
 			
 				# Attempt to connect to the printer
@@ -7401,7 +7401,7 @@ class M33FioPlugin(
 								else :
 				
 									# Re-connect; wait for the device to be available
-									for i in xrange(5) :
+									for i in range(5) :
 										try :
 											connection = serial.Serial(currentPort, currentBaudrate)
 											break
@@ -7573,7 +7573,7 @@ class M33FioPlugin(
 												fanName = "Xinyujie"
 				
 											# Check if updating fan failed
-											if fanName is not None and not self.setFan(connection, fanName) :
+											if fanName != None and not self.setFan(connection, fanName) :
 				
 												# Set error
 												error = True
@@ -7943,7 +7943,7 @@ class M33FioPlugin(
 														self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Show Message", message = gettext("Connecting…"), header = gettext("Connection Status")))
 										
 										# Check if an error hasn't occured, the printer's firmware is provided, the printer's bootloader isn't known, and the server is connected to the internet
-										if not error and firmwareType is not None and (firmwareType + " " + str(firmwareVersion)) in self.providedFirmwares and self.serverData is not None and int(bootloaderVersion[1 :]) not in self.serverData["Micro 3D"]["Bootloader Versions"] and str(int(bootloaderVersion[1 :])) not in str(self._settings.get(["Micro3DBootloaderVersionsUploaded"])).split() and self.connectedToInternet() :
+										if not error and firmwareType != None and (firmwareType + " " + str(firmwareVersion)) in self.providedFirmwares and self.serverData != None and int(bootloaderVersion[1 :]) not in self.serverData["Micro 3D"]["Bootloader Versions"] and str(int(bootloaderVersion[1 :])) not in str(self._settings.get(["Micro3DBootloaderVersionsUploaded"])).split() and self.connectedToInternet() :
 											
 											# Check if not reconnecting to printer
 											if not self.reconnectingToPrinter :
@@ -8056,7 +8056,7 @@ class M33FioPlugin(
 										self._plugin_manager.send_plugin_message(self._identifier, dict(value = "Show Message", message = gettext("Unable to connect to the printer. If your not using a Micro 3D printer then make sure to enable the Settings &gt; M33 Fio &gt; \"Not using a Micro 3D printer\" setting. Otherwise try cycling the printer's power and try again."), header = gettext("Connection Status"), confirm = True))
 			
 				# Check if connected to the printer
-				if connection is not None :
+				if connection != None :
 				
 					# Close connection
 					connection.close()
@@ -8068,7 +8068,7 @@ class M33FioPlugin(
 					self.eeprom = None
 				
 					# Close connection
-					if self._printer._comm is not None :
+					if self._printer._comm != None :
 				
 						try :
 							self._printer._comm.close(False, False)
@@ -8158,7 +8158,7 @@ class M33FioPlugin(
 									self.eeprom = None
 				
 									# Close connection
-									if self._printer._comm is not None :
+									if self._printer._comm != None :
 	
 										try :
 											self._printer._comm.close(False, False)
@@ -8177,7 +8177,7 @@ class M33FioPlugin(
 										self.eeprom = None
 				
 										# Close connection
-										if self._printer._comm is not None :
+										if self._printer._comm != None :
 	
 											try :
 												self._printer._comm.close(False, False)
@@ -8200,7 +8200,7 @@ class M33FioPlugin(
 											self._printer.get_transport().write_timeout = None
 						
 										# Check if communication layer has been established
-										if self._printer._comm is not None :
+										if self._printer._comm != None :
 						
 											# Set current firmware type
 											self.currentFirmwareType = self.getFirmwareDetails()[0]
@@ -8241,7 +8241,7 @@ class M33FioPlugin(
 												self.eeprom = None
 				
 												# Close connection
-												if self._printer._comm is not None :
+												if self._printer._comm != None :
 				
 													try :
 														self._printer._comm.close(False, False)
@@ -8260,7 +8260,7 @@ class M33FioPlugin(
 											self.eeprom = None
 					
 											# Close connection
-											if self._printer._comm is not None :
+											if self._printer._comm != None :
 		
 												try :
 													self._printer._comm.close(False, False)
@@ -8294,7 +8294,7 @@ class M33FioPlugin(
 			if "MACHINE_TYPE:The_Micro" not in data and "MACHINE_TYPE:Micro_3D" not in data :
 				
 				# Set write and read functions back to original
-				if self.originalWrite is not None and isinstance(self._printer.get_transport(), serial.Serial) :
+				if self.originalWrite != None and isinstance(self._printer.get_transport(), serial.Serial) :
 					self._printer.get_transport().write = self.originalWrite
 					self._printer.get_transport().readline = self.originalRead
 				
@@ -9514,7 +9514,7 @@ class M33FioPlugin(
 	# Pre-process G-code
 	def preprocessGcode(self, path, file_object, links = None, printer_profile = None, allow_overwrite = True, *args, **kwargs) :
 	
-		# Check if file is not G-code, not using a Micro 3D printer, or skipping pre-processing
+		# Check if file != G-code, not using a Micro 3D printer, or skipping pre-processing
 		if not octoprint.filemanager.valid_file_type(path, "gcode") or self._settings.get_boolean(["NotUsingAMicro3DPrinter"]) or self.skipPreprocessing :
 		
 			# Clear skip pre-processing
@@ -9808,38 +9808,38 @@ class M33FioPlugin(
 						if applyPreprocessors and not self._settings.get_boolean(["IgnorePrintDimensionLimitations"]) and not self.printingTestBorder and not self.printingBacklashCalibration and not self._settings.get_boolean(["UseCenterModelPreprocessor"]) :
 			
 							# Return false if X or Y are out of bounds				
-							if tier == "Low" and ((localX is not None and (localX < self.bedLowMinX or localX > self.bedLowMaxX)) or (localY is not None and (localY < self.bedLowMinY or localY > self.bedLowMaxY))) :
+							if tier == "Low" and ((localX != None and (localX < self.bedLowMinX or localX > self.bedLowMaxX)) or (localY != None and (localY < self.bedLowMinY or localY > self.bedLowMaxY))) :
 								return False
 			
-							elif tier == "Medium" and ((localX is not None and (localX < self.bedMediumMinX or localX > self.bedMediumMaxX)) or (localY is not None and (localY < self.bedMediumMinY or localY > self.bedMediumMaxY))) :
+							elif tier == "Medium" and ((localX != None and (localX < self.bedMediumMinX or localX > self.bedMediumMaxX)) or (localY != None and (localY < self.bedMediumMinY or localY > self.bedMediumMaxY))) :
 								return False
 
-							elif tier == "High" and ((localX is not None and (localX < self.bedHighMinX or localX > self.bedHighMaxX)) or (localY is not None and (localY < self.bedHighMinY or localY > self.bedHighMaxY))) :
+							elif tier == "High" and ((localX != None and (localX < self.bedHighMinX or localX > self.bedHighMaxX)) or (localY != None and (localY < self.bedHighMinY or localY > self.bedHighMaxY))) :
 								return False
 				
 						# Update minimums and maximums dimensions of extruder
 						if tier == "Low" :
-							if localX is not None :
+							if localX != None :
 								self.minXExtruderLow = min(self.minXExtruderLow, localX)
 								self.maxXExtruderLow = max(self.maxXExtruderLow, localX)
-							if localY is not None :
+							if localY != None :
 								self.minYExtruderLow = min(self.minYExtruderLow, localY)
 								self.maxYExtruderLow = max(self.maxYExtruderLow, localY)
 						elif tier == "Medium" :
-							if localX is not None :
+							if localX != None :
 								self.minXExtruderMedium = min(self.minXExtruderMedium, localX)
 								self.maxXExtruderMedium = max(self.maxXExtruderMedium, localX)
-							if localY is not None :
+							if localY != None :
 								self.minYExtruderMedium = min(self.minYExtruderMedium, localY)
 								self.maxYExtruderMedium = max(self.maxYExtruderMedium, localY)
 						else :
-							if localX is not None :
+							if localX != None :
 								self.minXExtruderHigh = min(self.minXExtruderHigh, localX)
 								self.maxXExtruderHigh = max(self.maxXExtruderHigh, localX)
-							if localY is not None :
+							if localY != None :
 								self.minYExtruderHigh = min(self.minYExtruderHigh, localY)
 								self.maxYExtruderHigh = max(self.maxYExtruderHigh, localY)
-						if localZ is not None :
+						if localZ != None :
 							self.minZExtruder = min(self.minZExtruder, localZ)
 							self.maxZExtruder = max(self.maxZExtruder, localZ)
 				
@@ -10173,7 +10173,7 @@ class M33FioPlugin(
 			try :
 				value = math.acos((currentX * previousX + currentY * previousY) / denominator)
 			
-			# Check if value is not a number
+			# Check if value != a number
 			except :
 			
 				# Return false
@@ -10221,7 +10221,7 @@ class M33FioPlugin(
 			try :
 				value = math.acos((currentX * previousX + currentY + previousY) / denominator)
 			
-			# Check if value is not a number
+			# Check if value != a number
 			except :
 			
 				# Return false
@@ -10374,7 +10374,7 @@ class M33FioPlugin(
 		commands = collections.deque()
 		
 		# Check if outputting to a file
-		if output is not None :
+		if output != None :
 
 			# Open input and output
 			input = open(input, "rb")
@@ -10391,7 +10391,7 @@ class M33FioPlugin(
 		while True :
 		
 			# Check if outputting to a file
-			if output is not None :
+			if output != None :
 
 				# Check if no more commands
 				if len(commands) == 0 :
@@ -10752,7 +10752,7 @@ class M33FioPlugin(
 					continue
 
 				# Check if outro hasn't been added, no more commands, and at end of file
-				if not self.addedOutro and len(commands) == 0 and ((output is not None and input.tell() == os.fstat(input.fileno()).st_size) or lastCommand) :
+				if not self.addedOutro and len(commands) == 0 and ((output != None and input.tell() == os.fstat(input.fileno()).st_size) or lastCommand) :
 
 					# Set added outro
 					self.addedOutro = True
@@ -10847,7 +10847,7 @@ class M33FioPlugin(
 						gpioLayer = self._settings.get_int(["GpioLayer"])
 						
 						# Check if at the start of the specified layer
-						if gpioLayer is not None and self.preparationLayerCounter == gpioLayer :
+						if gpioLayer != None and self.preparationLayerCounter == gpioLayer :
 					
 							# Initialize new commands
 							newCommands = []
@@ -11746,13 +11746,13 @@ class M33FioPlugin(
 						self.currentF = gcode.getValue("F")
 					
 					# Otherwise check if current F is set
-					elif self.currentF is not None :
+					elif self.currentF != None :
 					
 						# Set command's F value to current F
 						gcode.setValue("F", self.currentF)
 				
 				# Check if outputting to a file
-				if output is not None :
+				if output != None :
 				
 					# Send ascii representation of the command to output
 					output.write(gcode.getAscii() + "\n")
@@ -12186,7 +12186,7 @@ class M33FioPlugin(
 		comm_instance._log("Connecting to: " + str(port))
 		
 		# Create a connection
-		for i in xrange(5) :
+		for i in range(5) :
 			try :
 				connection = serial.Serial(str(port), baudrate)
 				break
@@ -12380,7 +12380,7 @@ class M33FioPlugin(
 		elif platform.uname()[0].startswith("Darwin") and "objc" in sys.modules :
 		
 			# Check if sleep framework exists
-			if hasattr(self, "osXSleepFramework") and self.osXSleepFramework is not None :
+			if hasattr(self, "osXSleepFramework") and self.osXSleepFramework != None :
 			
 				# Release assertion on sleep framework
 				self.osXSleepFramework.IOPMAssertionRelease(self.osXSleepPrevention)
@@ -12390,7 +12390,7 @@ class M33FioPlugin(
 		elif (platform.uname()[0].startswith("Linux") or platform.uname()[0].startswith("FreeBSD")) and "dbus" in sys.modules :
 		
 			# Check if sleep service exists
-			if hasattr(self, "dbusSleepService") and self.dbusSleepService is not None :
+			if hasattr(self, "dbusSleepService") and self.dbusSleepService != None :
 					
 				# Uninhibit sleep service
 				self.dbusSleepService.UnInhibit(self.dbusSleepPrevention)
@@ -12401,7 +12401,7 @@ class M33FioPlugin(
 	
 		# Check if GPIO pin is set
 		gpioPin = self._settings.get_int(["GpioPin"])
-		if gpioPin is not None :
+		if gpioPin != None :
 	
 			# Check if using Linux
 			if platform.uname()[0].startswith("Linux") :
@@ -12441,7 +12441,7 @@ class M33FioPlugin(
 	
 		# Check if GPIO pin is set
 		gpioPin = self._settings.get_int(["GpioPin"])
-		if gpioPin is not None :
+		if gpioPin != None :
 	
 			# Check if using Linux
 			if platform.uname()[0].startswith("Linux") :
@@ -12478,8 +12478,8 @@ class M33FioPlugin(
 
 
 # Plugin info
-__plugin_name__ = "M33 Fio"
-
+__plugin_name__ = "M33 Fio Custom"
+__plugin_pythoncompat__ = ">=2.7,<4"
 
 # Plugin load
 def __plugin_load__() :

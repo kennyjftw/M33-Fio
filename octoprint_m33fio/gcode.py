@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+
 
 
 # Imports
@@ -19,7 +19,7 @@ class Gcode(object) :
 		self.hostCommand = ""
 		self.originalCommand = ""
 		self.parameterValue = []
-		for i in xrange(len(self.order)) :
+		for i in range(len(self.order)) :
 			self.parameterValue.append(str(""))
 		
 		# Parse line if provided
@@ -33,7 +33,7 @@ class Gcode(object) :
 		self.dataType = 0x1080
 		
 		# Clear parameter values
-		for i in xrange(len(self.order)) :
+		for i in range(len(self.order)) :
 			self.parameterValue[i] = ""
 		
 		# Clear host command
@@ -287,7 +287,7 @@ class Gcode(object) :
 		
 		# Go through all values
 		sum1 = sum2 = 0
-		for index in xrange(len(request)) :
+		for index in range(len(request)) :
 
 			# Set sums
 			sum1 = (sum1 + struct.unpack("B", request[index])[0]) % 0xFF
@@ -313,7 +313,7 @@ class Gcode(object) :
 		request = ""
 		
 		# Go through all values
-		for i in xrange(len(self.order)) :
+		for i in range(len(self.order)) :
 			
 			# Check if command contains value and value is valid
 			if bool(self.dataType & (1 << i)) and bool(0xF0F7F & (1 << i)) :
@@ -454,7 +454,7 @@ class Gcode(object) :
 		self.dataType = 0x1080
 		
 		# Clear parameter values
-		for i in xrange(len(self.order)) :
+		for i in range(len(self.order)) :
 			self.parameterValue[i] = ""
 	
 		# Clear host command
