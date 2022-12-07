@@ -1,4 +1,6 @@
 # M33 Fio
+Amalgam of numerous community updates made since Donovan6000 understandably walked away from this project.  Here's hoping I can break my printer in new and interesting ways.
+
 © 2015-2017 Exploit Kings. All rights reserved.
 
 ### Description
